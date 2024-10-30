@@ -30,3 +30,6 @@ tui-input = "0.8.0"
 [[bin]]
 name = "cag"
 path = "src/main.rs"
+
+[lib]
+
