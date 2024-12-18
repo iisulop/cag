@@ -1,15 +1,15 @@
+use crate::context_finder::{ContextFinder, InputType};
+use crate::error::Error;
 use crate::input::stream_input;
 use crate::search::{search, SearchDirection, SearchState};
 use crate::ui::pager;
 use crate::utils::{decrement, get_lines, increment};
 use crossterm::event::{read, Event, KeyCode};
 use ratatui::{backend::Backend, Terminal};
-use tui_input::backend::crossterm::EventHandler as _;
 use std::sync::mpsc::TryRecvError;
 use std::time::Duration;
 use tracing::{trace, warn};
-use crate::error::Error;
-use crate::context_finder::{ContextFinder, InputType};
+use tui_input::backend::crossterm::EventHandler as _;
 
 const INPUT_STREAM_TIMEOUT: u64 = 1000;
 
@@ -39,10 +39,20 @@ pub fn run_app<B: Backend>(terminal: &mut Terminal<B>) -> Result<(), Error> {
                 all_lines
             }
         };
+        // TODO: Position needs to be fixed somehow as lines are now displaying twice: in context
+        // and in the pager
         let context = cf.get_context(&all_lines[..], position);
         let lines = get_lines(&all_lines[..], position, terminal.size()?.height)?;
 
-        terminal.draw(|frame| pager(frame, &state, lines, context, &mut vertical_size))?;
+        let hilights = match state {
+            State::Search(SearchState::GetInput { ref term }) => Some(term.to_string()),
+            State::Search(SearchState::Searching { ref term, .. }) => Some(term.to_string()),
+            _ => None,
+        };
+        terminal
+            .draw(|frame| {
+                pager(frame, &state, lines, context, &mut vertical_size, hilights);
+            })?;
 
         let event = read()?;
         if let Event::Key(key) = event {
@@ -76,7 +86,13 @@ pub fn run_app<B: Backend>(terminal: &mut Terminal<B>) -> Result<(), Error> {
                         });
                     }
                     _ => {
-                        position = search(term, position, &all_lines, &SearchDirection::Forward)?;
+                        position = if let Some(new_position) =
+                            search(term, position, &all_lines, &SearchDirection::Forward)?
+                        {
+                            new_position
+                        } else {
+                            position
+                        };
                         term.handle_event(&event);
                     }
                 },
@@ -86,11 +102,22 @@ pub fn run_app<B: Backend>(terminal: &mut Terminal<B>) -> Result<(), Error> {
                 }) => match key.code {
                     KeyCode::Esc | KeyCode::Char('q') => state = State::Pager,
                     KeyCode::Char('n') => {
-                        position =
-                            search(term, position + 1, &all_lines, &SearchDirection::Forward)?;
+                        position = if let Some(new_position) =
+                            search(term, position + 1, &all_lines, &SearchDirection::Forward)?
+                        {
+                            new_position
+                        } else {
+                            position
+                        };
                     }
                     KeyCode::Char('N') => {
-                        position = search(term, position, &all_lines, &SearchDirection::Backwards)?;
+                        position = if let Some(new_position) =
+                            search(term, position, &all_lines, &SearchDirection::Backwards)?
+                        {
+                            new_position
+                        } else {
+                            position
+                        };
                     }
                     _ => (),
                 },

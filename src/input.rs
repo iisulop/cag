@@ -1,5 +1,5 @@
 use crate::error::Error;
-use std::io::{self, stdin, BufRead};
+use std::io::{stdin, BufRead};
 use std::sync::mpsc::{channel, Receiver};
 use std::thread::{self, JoinHandle};
 use tracing::{trace, warn};

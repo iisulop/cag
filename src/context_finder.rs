@@ -117,7 +117,7 @@ mod test {
     fn find_commit_from_start() {
         let lines = GIT_LOG.lines();
         let input: Vec<String> = lines.map(|l| l.to_string()).collect();
-        let cf = ContextFinder::new(crate::context_finder::InputType::Git).unwrap();
+        let cf = ContextFinder::new(&crate::context_finder::InputType::Git).unwrap();
         let commit_pos = cf.find_range(&input, 0);
         assert!(commit_pos.is_none());
     }
@@ -126,7 +126,7 @@ mod test {
     fn find_commit_from_end() {
         let lines = GIT_LOG.lines();
         let input: Vec<String> = lines.map(|l| l.to_string()).collect();
-        let cf = ContextFinder::new(crate::context_finder::InputType::Git).unwrap();
+        let cf = ContextFinder::new(&crate::context_finder::InputType::Git).unwrap();
         let range = cf.find_range(&input, input.len() - 1).unwrap();
         assert_eq!(range.start, 306);
         assert_eq!(range.end, 311);
@@ -138,7 +138,7 @@ mod test {
     fn find_commit_patch_from_start() {
         let lines = GIT_LOG.lines();
         let input: Vec<String> = lines.map(|l| l.to_string()).collect();
-        let cf = ContextFinder::new(crate::context_finder::InputType::Git).unwrap();
+        let cf = ContextFinder::new(&crate::context_finder::InputType::Git).unwrap();
         let range = cf.find_range(&input, 0);
         assert!(range.is_none());
     }
@@ -147,7 +147,7 @@ mod test {
     fn find_commit_patch_first() {
         let lines = GIT_LOG.lines();
         let input: Vec<String> = lines.map(|l| l.to_string()).collect();
-        let cf = ContextFinder::new(crate::context_finder::InputType::Git).unwrap();
+        let cf = ContextFinder::new(&crate::context_finder::InputType::Git).unwrap();
         let range = cf.find_range(&input, 10).unwrap();
         assert_eq!(range.start, 0);
         assert_eq!(range.end, 5);
@@ -159,7 +159,7 @@ mod test {
     fn find_commit_patch() {
         let lines = GIT_LOG.lines();
         let input: Vec<String> = lines.map(|l| l.to_string()).collect();
-        let cf = ContextFinder::new(crate::context_finder::InputType::Git).unwrap();
+        let cf = ContextFinder::new(&crate::context_finder::InputType::Git).unwrap();
         let range = cf.find_range(&input, input.len() - 1).unwrap();
         assert_eq!(range.start, 306);
         assert_eq!(range.end, 311);

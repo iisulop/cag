@@ -1,16 +1,13 @@
+use cag::app::run_app;
+use cag::error::Error;
 use crossterm::{
-    event::{read, DisableMouseCapture, EnableMouseCapture, Event, KeyCode},
+    event::{DisableMouseCapture, EnableMouseCapture},
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
-use ratatui::{
-    backend::{Backend, CrosstermBackend},
-    Terminal,
-};
+use ratatui::{backend::CrosstermBackend, Terminal};
 use std::io;
 use tracing::{error, trace, Level};
-use cag::app::run_app;
-use cag::error::Error;
 
 const ENVIRONMENT_VARIABLE_ENABLE_TRACING: &str = "ENABLE_TRACING";
 

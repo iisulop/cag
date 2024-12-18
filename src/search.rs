@@ -1,5 +1,5 @@
-use aho_corasick::AhoCorasick;
 use crate::error::Error;
+use aho_corasick::AhoCorasick;
 use tui_input::Input;
 
 #[derive(Debug, Eq, PartialEq)]
@@ -18,7 +18,7 @@ pub fn search(
     position: usize,
     all_lines: &[String],
     direction: &SearchDirection,
-) -> Result<usize, Error> {
+) -> Result<Option<usize>, Error> {
     let ac = AhoCorasick::builder()
         .ascii_case_insensitive(true)
         .build([term.value()])?;
@@ -49,5 +49,5 @@ pub fn search(
             })
             .collect(),
     };
-    Ok(*match_lines.first().unwrap_or(&position))
+    Ok(match_lines.first().cloned())
 }

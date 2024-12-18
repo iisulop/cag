@@ -1,3 +1,4 @@
+use std::array::TryFromSliceError;
 use std::io;
 use std::num::TryFromIntError;
 use std::sync::mpsc;
@@ -6,6 +7,10 @@ use std::sync::mpsc;
 pub enum Error {
     #[error("Could not value to type: {0}")]
     Cast(#[from] TryFromIntError),
+    #[error("Could not get lines to display")]
+    GetLines,
+    #[error("Could not hilight search term")]
+    Hilight(#[from] TryFromSliceError),
     #[error("Could not initialize terminal")]
     Io(#[from] io::Error),
     #[error("Could not parse regular expression")]
@@ -18,6 +23,4 @@ pub enum Error {
     StreamingSend,
     #[error("Timeout while waiting for input stream")]
     StreamingTimeout(#[from] std::sync::mpsc::RecvTimeoutError),
-    #[error("Could not get lines to display")]
-    GetLines,
 }
