@@ -49,10 +49,9 @@ pub fn run_app<B: Backend>(terminal: &mut Terminal<B>) -> Result<(), Error> {
             State::Search(SearchState::Searching { ref term, .. }) => Some(term.to_string()),
             _ => None,
         };
-        terminal
-            .draw(|frame| {
-                pager(frame, &state, lines, context, &mut vertical_size, hilights);
-            })?;
+        terminal.draw(|frame| {
+            pager(frame, &state, lines, context, &mut vertical_size, hilights);
+        })?;
 
         let event = read()?;
         if let Event::Key(key) = event {

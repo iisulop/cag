@@ -1,6 +1,8 @@
-use crate::{app::State, error::Error};
 use crate::search::SearchState;
+use crate::{app::State, error::Error};
 use aho_corasick::AhoCorasick;
+use ratatui::style::{Style, Stylize as _};
+use ratatui::text::{Line, Span};
 use ratatui::{
     backend::Backend,
     layout::{Constraint, Direction, Layout, Rect},
@@ -50,6 +52,7 @@ pub fn pager<B: Backend>(
     f.render_widget(commit_paragraph, chunks[0]);
 
     let paragraph = if let Some(hilights) = hilights {
+        let hilight_style = Style::new().bold();
         let hilighted_log: Vec<_> = git_log
             .iter()
             .map(|line| {
@@ -66,30 +69,37 @@ pub fn pager<B: Backend>(
                     .collect::<Result<Vec<_>, _>>()?
                     .iter()
                     .fold(
-                        line[0..hilights
-                            .first()
-                            .map(|m| m.0)
-                            .unwrap_or(line.chars().count())]
-                            .to_string(),
-                        |coll, [(start, end), (next_start, _next_end)]| {
-                            let hilight = &line[*start..*end];
-                            let text_between_hilights = &line[*end..*next_start];
-                            debug!("Adding: `{hilight}` and `{text_between_hilights}`");
-                            coll + hilight + text_between_hilights
+                        vec![Span::from(
+                            line[0..hilights
+                                .first()
+                                .map(|m| m.0)
+                                .unwrap_or(line.chars().count())]
+                                .to_string(),
+                        )],
+                        |mut coll, [(start, end), (next_start, _next_end)]| {
+                            let hilight = Span::styled(&line[*start..*end], hilight_style);
+                            let text_between_hilights = Span::from(&line[*end..*next_start]);
+                            coll.append(&mut vec![hilight, text_between_hilights]);
+                            coll
+                            // debug!("Adding: `{hilight}` and `{text_between_hilights}`");
                         },
                     );
-                let line_hilighted = if let Some((last_start, last_end)) =  hilights.last() {
-                    let hilight = &line[*last_start..*last_end];
-                    let rest_of_line = &line[*last_end..];
-                    line_hilighted + hilight + rest_of_line
+                let line_hilighted = if let Some((last_start, last_end)) = hilights.last() {
+                    let hilight = Span::styled(&line[*last_start..*last_end], hilight_style);
+                    let rest_of_line = Span::from(&line[*last_end..]);
+                    Line::from(
+                        vec![line_hilighted, vec![hilight], vec![rest_of_line]]
+                            .into_iter()
+                            .flatten()
+                            .collect::<Vec<_>>(),
+                    )
                 } else {
-                    line_hilighted
+                    Line::from(line_hilighted)
                 };
-                Ok::<String, Error>(line_hilighted)
+                Ok::<Line, Error>(line_hilighted)
             })
             .collect::<Result<Vec<_>, _>>()?;
-        Paragraph::new(hilighted_log.as_slice().join("\n"))
-        //Paragraph::new(git_log.join("\n"))
+        Paragraph::new(hilighted_log)
     } else {
         Paragraph::new(git_log.join("\n"))
     };
