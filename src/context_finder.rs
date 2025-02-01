@@ -15,6 +15,13 @@ pub struct ContextFinder {
 }
 
 impl ContextFinder {
+    /// This function initializes a `ContextFinder` by compiling the necessary
+    /// regular expressions based on the provided `InputType`. Currently, it
+    /// supports creating a context finder for Git commit logs.
+    ///
+    /// # Errors
+    /// This function can return errors in the following cases:
+    /// * If there is an error compiling the regular expressions
     pub fn new(input_type: &InputType) -> Result<Self, Error> {
         match input_type {
             InputType::Git => {
@@ -26,6 +33,21 @@ impl ContextFinder {
         }
     }
 
+    /// Finds the context around a given position in the provided lines.
+    ///
+    /// This function searches through the provided lines of text to find the
+    /// context around a specified position. The context is determined by the
+    /// start and end regular expressions defined in the `ContextFinder`. It
+    /// returns a slice of strings representing the context if found.
+    ///
+    /// # Arguments
+    ///
+    /// * `all_lines` - A slice of strings representing all lines of text.
+    /// * `position` - The position within the lines to find the context for.
+    ///
+    /// # Returns
+    ///
+    /// * `Option<&'a [String]>` - Returns an Option containing a slice of strings representing the context if found, otherwise None.
     pub fn get_context<'a>(
         &self,
         all_lines: &'a [String],
@@ -116,7 +138,7 @@ mod test {
     #[test]
     fn find_commit_from_start() {
         let lines = GIT_LOG.lines();
-        let input: Vec<String> = lines.map(|l| l.to_string()).collect();
+        let input: Vec<String> = lines.map(std::string::ToString::to_string).collect();
         let cf = ContextFinder::new(&crate::context_finder::InputType::Git).unwrap();
         let commit_pos = cf.find_range(&input, 0);
         assert!(commit_pos.is_none());
@@ -125,7 +147,7 @@ mod test {
     #[test]
     fn find_commit_from_end() {
         let lines = GIT_LOG.lines();
-        let input: Vec<String> = lines.map(|l| l.to_string()).collect();
+        let input: Vec<String> = lines.map(std::string::ToString::to_string).collect();
         let cf = ContextFinder::new(&crate::context_finder::InputType::Git).unwrap();
         let range = cf.find_range(&input, input.len() - 1).unwrap();
         assert_eq!(range.start, 306);
@@ -137,7 +159,7 @@ mod test {
     #[test]
     fn find_commit_patch_from_start() {
         let lines = GIT_LOG.lines();
-        let input: Vec<String> = lines.map(|l| l.to_string()).collect();
+        let input: Vec<String> = lines.map(std::string::ToString::to_string).collect();
         let cf = ContextFinder::new(&crate::context_finder::InputType::Git).unwrap();
         let range = cf.find_range(&input, 0);
         assert!(range.is_none());
@@ -146,7 +168,7 @@ mod test {
     #[test]
     fn find_commit_patch_first() {
         let lines = GIT_LOG.lines();
-        let input: Vec<String> = lines.map(|l| l.to_string()).collect();
+        let input: Vec<String> = lines.map(std::string::ToString::to_string).collect();
         let cf = ContextFinder::new(&crate::context_finder::InputType::Git).unwrap();
         let range = cf.find_range(&input, 10).unwrap();
         assert_eq!(range.start, 0);
@@ -158,7 +180,7 @@ mod test {
     #[test]
     fn find_commit_patch() {
         let lines = GIT_LOG.lines();
-        let input: Vec<String> = lines.map(|l| l.to_string()).collect();
+        let input: Vec<String> = lines.map(std::string::ToString::to_string).collect();
         let cf = ContextFinder::new(&crate::context_finder::InputType::Git).unwrap();
         let range = cf.find_range(&input, input.len() - 1).unwrap();
         assert_eq!(range.start, 306);

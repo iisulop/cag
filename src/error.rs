@@ -24,3 +24,9 @@ pub enum Error {
     #[error("Timeout while waiting for input stream")]
     StreamingTimeout(#[from] std::sync::mpsc::RecvTimeoutError),
 }
+
+impl From<Error> for io::Error {
+    fn from(value: Error) -> Self {
+        io::Error::other(value.to_string())
+    }
+}

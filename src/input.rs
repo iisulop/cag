@@ -44,7 +44,7 @@ pub fn stream_input(num_lines: usize) -> (Receiver<Result<Vec<String>, Error>>, 
                 if let Err(_send_err) = tx.send(Err(Error::StreamingSend)) {
                     return;
                 }
-            };
+            }
         }
     });
     (rx, thread_handle)

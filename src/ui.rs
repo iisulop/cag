@@ -4,7 +4,6 @@ use aho_corasick::AhoCorasick;
 use ratatui::style::{Style, Stylize as _};
 use ratatui::text::{Line, Span};
 use ratatui::{
-    backend::Backend,
     layout::{Constraint, Direction, Layout, Rect},
     widgets::{Block, BorderType, Borders, Paragraph},
     Frame,
@@ -12,8 +11,30 @@ use ratatui::{
 use tracing::{debug, trace};
 use tui_input::Input;
 
-pub fn pager<B: Backend>(
-    f: &mut Frame<B>,
+/// Renders the pager UI.
+///
+/// This function is responsible for rendering the pager UI, including the
+/// commit message,
+/// git log, and search box if applicable. It handles different states such as
+/// `Search` and `Pager`.
+///
+/// # Arguments
+/// * `f` - A mutable reference to the `Frame` to render the UI.
+/// * `state` - A reference to the current `State` of the application.
+/// * `git_log` - A slice of strings representing the git log to display.
+/// * `commit` - An optional slice of strings representing the commit message
+///   to display.
+/// * `vertical_size` - A mutable reference to a `u16` to store the vertical
+///   size of the rendered UI.
+/// * `hilights` - An optional string containing the search term to highlight
+///   in the git log.
+///
+/// # Errors
+/// This function can return errors in the following cases:
+/// * If there is an error building the Aho-Corasick automaton (`aho_corasick::Error`).
+/// * If there is an error rendering the widgets (`tui::Error`).
+pub fn pager(
+    f: &mut Frame,
     state: &State,
     git_log: &[String],
     commit: Option<&[String]>,
@@ -42,7 +63,7 @@ pub fn pager<B: Backend>(
         .direction(Direction::Vertical)
         .constraints(layout)
         .margin(1)
-        .split(f.size());
+        .split(f.area());
 
     let commit_paragraph = Paragraph::new(commit.unwrap_or_default()).block(
         Block::default()
@@ -58,8 +79,7 @@ pub fn pager<B: Backend>(
             .map(|line| {
                 let ac = AhoCorasick::builder()
                     .ascii_case_insensitive(true)
-                    .build([hilights.as_str()])
-                    .unwrap();
+                    .build([hilights.as_str()])?;
                 let matches = ac.find_iter(line);
                 let hilights: Vec<_> = matches.map(|m| (m.start(), m.end())).collect();
                 debug!("Got hilights at: {hilights:?}");
@@ -70,10 +90,7 @@ pub fn pager<B: Backend>(
                     .iter()
                     .fold(
                         vec![Span::from(
-                            line[0..hilights
-                                .first()
-                                .map(|m| m.0)
-                                .unwrap_or(line.chars().count())]
+                            line[0..hilights.first().map_or(line.chars().count(), |m| m.0)]
                                 .to_string(),
                         )],
                         |mut coll, [(start, end), (next_start, _next_end)]| {
@@ -121,7 +138,7 @@ pub fn pager<B: Backend>(
     Ok(())
 }
 
-fn draw_search_box<B: Backend>(f: &mut Frame<B>, area: Rect, input: &Input) {
+fn draw_search_box(f: &mut Frame, area: Rect, input: &Input) {
     let search_box =
         Paragraph::new(input.value()).block(Block::default().borders(Borders::ALL).title("Search"));
     f.render_widget(search_box, area);

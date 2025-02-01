@@ -13,6 +13,16 @@ pub enum SearchState {
     Searching { term: Input, position: usize },
 }
 
+/// Searches for a term in the provided lines of text starting from a given position.
+///
+/// # Returns
+/// * `Result<Option<usize>, Error>` - Returns an Ok result containing an
+///   Option with the line number of the first match if found, otherwise None.
+///   Returns an Error if the search fails.
+///
+/// # Errors
+/// This function can return errors in the following cases:
+/// * If there is an error building the Aho-Corasick automaton
 pub fn search(
     term: &Input,
     position: usize,
@@ -49,5 +59,5 @@ pub fn search(
             })
             .collect(),
     };
-    Ok(match_lines.first().cloned())
+    Ok(match_lines.first().copied())
 }

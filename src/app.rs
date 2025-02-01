@@ -3,7 +3,7 @@ use crate::error::Error;
 use crate::input::stream_input;
 use crate::search::{search, SearchDirection, SearchState};
 use crate::ui::pager;
-use crate::utils::{decrement, get_lines, increment};
+use crate::utils::{decrement_scroll_position, get_lines, increment_scroll_position};
 use crossterm::event::{read, Event, KeyCode};
 use ratatui::{backend::Backend, Terminal};
 use std::sync::mpsc::TryRecvError;
@@ -18,6 +18,17 @@ pub enum State {
     Search(SearchState),
 }
 
+/// Runs the application.
+///
+/// This function initializes the terminal, sets up the input stream, and enters a loop to handle
+/// user input and update the terminal display accordingly.
+///
+/// # Errors
+/// This function can return errors in the following cases:
+/// * If there is an error initializing the terminal size.
+/// * If there is an error receiving input from the input stream.
+/// * If there is an error drawing to the terminal.
+/// * If there is an error reading user input.
 pub fn run_app<B: Backend>(terminal: &mut Terminal<B>) -> Result<(), Error> {
     let mut position: usize = 0;
     let mut vertical_size = terminal.size()?.height;
@@ -45,13 +56,13 @@ pub fn run_app<B: Backend>(terminal: &mut Terminal<B>) -> Result<(), Error> {
         let lines = get_lines(&all_lines[..], position, terminal.size()?.height)?;
 
         let hilights = match state {
-            State::Search(SearchState::GetInput { ref term }) => Some(term.to_string()),
-            State::Search(SearchState::Searching { ref term, .. }) => Some(term.to_string()),
+            State::Search(
+                SearchState::GetInput { ref term } | SearchState::Searching { ref term, .. },
+            ) => Some(term.to_string()),
             _ => None,
         };
-        terminal.draw(|frame| {
-            pager(frame, &state, lines, context, &mut vertical_size, hilights);
-        })?;
+        terminal
+            .try_draw(|frame| pager(frame, &state, lines, context, &mut vertical_size, hilights))?;
 
         let event = read()?;
         if let Event::Key(key) = event {
@@ -59,18 +70,23 @@ pub fn run_app<B: Backend>(terminal: &mut Terminal<B>) -> Result<(), Error> {
                 State::Pager => match key.code {
                     KeyCode::Char('q') | KeyCode::Esc => return Ok(()),
                     KeyCode::Char('j') | KeyCode::Down => {
-                        position = increment(position, 1, all_lines.len(), vertical_size);
+                        position =
+                            increment_scroll_position(position, 1, all_lines.len(), vertical_size);
                     }
-                    KeyCode::Char('k') | KeyCode::Up => position = decrement(position, 1),
+                    KeyCode::Char('k') | KeyCode::Up => {
+                        position = decrement_scroll_position(position, 1)
+                    }
                     KeyCode::PageDown => {
-                        position = increment(
+                        position = increment_scroll_position(
                             position,
                             usize::from(vertical_size),
                             all_lines.len(),
                             vertical_size,
                         );
                     }
-                    KeyCode::PageUp => position = decrement(position, usize::from(vertical_size)),
+                    KeyCode::PageUp => {
+                        position = decrement_scroll_position(position, usize::from(vertical_size))
+                    }
                     KeyCode::Char('/') => {
                         state = State::Search(SearchState::GetInput { term: "".into() });
                     }
