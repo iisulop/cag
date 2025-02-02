@@ -1,7 +1,7 @@
 use crate::search::SearchState;
 use crate::{app::State, error::Error};
 use aho_corasick::AhoCorasick;
-use ratatui::style::{Style, Stylize as _};
+use ratatui::style::Style;
 use ratatui::text::{Line, Span};
 use ratatui::{
     layout::{Constraint, Direction, Layout, Rect},
@@ -42,6 +42,9 @@ pub fn pager(
     hilights: Option<String>,
 ) -> Result<(), Error> {
     trace!("Rendering screen");
+    let hilight_style = Style::new()
+        .fg(ratatui::style::Color::Black)
+        .bg(ratatui::style::Color::Gray);
     let commit_len = commit.map_or(0, |commit| commit.iter().len() + 1);
     let commit = commit.map(|commit| commit.join("\n"));
 
@@ -57,6 +60,7 @@ pub fn pager(
             Constraint::Max(std::cmp::min(7, commit_len as u16)),
             Constraint::Min(8),
         ],
+        State::Exit => unreachable!(),
     };
 
     let chunks = Layout::default()
@@ -73,7 +77,6 @@ pub fn pager(
     f.render_widget(commit_paragraph, chunks[0]);
 
     let paragraph = if let Some(hilights) = hilights {
-        let hilight_style = Style::new().bold();
         let hilighted_log: Vec<_> = git_log
             .iter()
             .map(|line| {
@@ -134,6 +137,7 @@ pub fn pager(
             draw_search_box(f, chunks[2], term);
         }
         State::Pager => (),
+        State::Exit => unreachable!(),
     }
     Ok(())
 }
