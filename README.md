@@ -4,7 +4,7 @@
 
 # Context aware pager
 
-cag is a pager keeping track and displaying the currently viewed git commit.
+`cag` is a context aware pager displaying the currently viewed git commit's commit information when scrolling through the commit patch content.
 
 Usage: `git diff --patch | cag`
 
